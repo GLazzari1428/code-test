@@ -1,8 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use \App\Http\Controllers\AuthController;
-use \App\Http\Controllers\SiteController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\SiteController;
+use App\Http\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,25 +16,32 @@ use \App\Http\Controllers\SiteController;
 |
 */
 
+Route::get('/', [SiteController::class, 'index']);
+
 // Auth
-Route::get('login', [ AuthController::class, 'getLogin' ])->middleware('guest')->name('login');
-Route::post('login', [ AuthController::class, 'postLogin' ])->middleware('guest')->name('login');
-Route::get('cadastro', [ AuthController::class, 'getRegister' ])->middleware('guest')->name('register');
-Route::post('cadastro', [ AuthController::class, 'postRegister' ])->middleware('guest')->name('register');
-Route::post('logout', [ AuthController::class, 'getLogout' ])->name('logout');
+Route::get('/login', [AuthController::class, 'login'])->name('login');
+Route::post('/login', [AuthController::class, 'auth'])->name('login.auth');
+Route::get('/register', [AuthController::class, 'register'])->name('register');
+Route::post('/register', [AuthController::class, 'store'])->name('register.store');
+Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Veterinário
-Route::get('vet', [ SiteController::class, 'getVet' ])->middleware('auth:vet')->name('vet');
-Route::get('editar-consulta/{appointment_id}', [ SiteController::class, 'getEditAppointment' ])->name('vet.edit-appointment');
 
-// Cliente
-Route::get('cliente', [ SiteController::class, 'getClient' ])->middleware('auth')->name('client');
-Route::get('editar-paciente/{patient_id?}', [ SiteController::class, 'getEditPatient' ])->name('client.edit-patient');
-Route::post('editar-paciente/{patient_id?}', [ SiteController::class, 'postEditPatient' ])->name('client.edit-patient');
-Route::get('remover-paciente/{patient_id}', [ SiteController::class, 'getRemovePatient' ])->name('client.remove-patient');
-Route::get('agendar-consulta', [ SiteController::class, 'getCreateAppointment' ])->name('client.create-appointment');
-Route::post('agendar-consulta', [ SiteController::class, 'postCreateAppointment' ])->name('client.create-appointment');
-Route::get('consulta/{appointment_id}', [ SiteController::class, 'getAppointment' ])->name('client.view-appointment');
+Route::group(['middleware' => 'auth'], function () {
+    Route::get('/client', [SiteController::class, 'client'])->name('client');
+    Route::get('/vet', [SiteController::class, 'vet'])->name('vet');
 
-// Website
-Route::get('', [ SiteController::class, 'getIndex' ])->name('index');
+    // User Profile
+    Route::get('/user/profile', [UserController::class, 'edit'])->name('user.edit');
+    Route::put('/user/profile', [UserController::class, 'update'])->name('user.update');
+
+    // Patient (represents both patient and appointment in this structure)
+    Route::get('/patient/edit/{id}', [SiteController::class, 'editPatient'])->name('patient.edit');
+    Route::put('/patient/{id}', [SiteController::class, 'updatePatient'])->name('patient.update');
+
+    // Appointment
+    Route::get('/appointment/create', [SiteController::class, 'createAppointment'])->name('appointment.create');
+    Route::post('/appointment', [SiteController::class, 'storeAppointment'])->name('appointment.store');
+    Route::get('/appointment/edit/{id}', [SiteController::class, 'editAppointment'])->name('appointment.edit');
+    Route::put('/appointment/update/{id}', [SiteController::class, 'updateAppointment'])->name('appointment.update');
+    Route::delete('/appointment/delete/{id}', [SiteController::class, 'destroyAppointment'])->name('appointment.destroy');
+});
