@@ -1,72 +1,61 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>@yield('title')</title>
+<head>
+    <meta charset="utf-g">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <link rel="stylesheet" href="{{ asset('css/app.css') }}?v=1">
-        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <title>Rusky Vet</title>
 
-        <link rel="shortcut icon" href="{{ asset('images/logo.png') }}">
-    </head>
-    <body>
-        <nav class="navbar navbar-scroll-top fixed-top navbar-expand-lg navbar-light bg-white border-bottom">
-            <div class="container">
-                <a href="{{ route('index') }}" class="navbar-brand">
-                    <img src="{{ asset('images/logo.png') }}" class="mr-2" width="25">
-                    <strong>Rusky Vet</strong>
-                </a>
-                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#menu" aria-controls="menu" aria-expanded="false" aria-label="Abrir menu">
-                    <span class="menu-icon"></span>
-                </button>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/app.css">
+</head>
 
-                <div class="collapse navbar-collapse" id="menu">
-                    <ul class="navbar-nav ml-auto">
-                        @guest
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('login') }}">Login</a>
-                            </li>
-                        @else
-                            <li class="nav-item dropdown">
-                                <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
-                                    {{ explode(' ', trim(auth()->User()->name))[0] }}
-                                </a>
-                                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-                                    <a href="{{ auth()->User()->type === 'VET' ? route('vet') : route('client') }}" class="dropdown-item">Painel</a>
-                                    {{-- Linha adicionada para o perfil do utilizador --}}
-                                    <a href="{{ route('user.edit') }}" class="dropdown-item">Meu Perfil</a>
-                                    <a class="dropdown-item" href="{{ route('logout') }}" onClick="event.preventDefault();document.getElementById('logout-form').submit();">
-                                        Logout
-                                    </a>
-                                    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                                        @csrf
-                                    </form>
-                                </div>
-                            </li>
-                        @endguest
-                    </ul>
-                </div>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="{{ route('home') }}">Rusky Vet</a>
+
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ml-auto">
+                @if (Auth::check())
+                    <li class="nav-item">
+                        <a href="{{ route('logout') }}" class="nav-link">Sair</a>
+                    </li>
+                @else
+                    <li class="nav-item">
+                        <a href="{{ route('login') }}" class="nav-link">Entrar</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('register') }}" class="nav-link">Registrar</a>
+                    </li>
+                @endif
+            </ul>
+        </div>
+    </nav>
+    
+    <div class="container mt-4">
+        @if(session('success'))
+            <div class="alert alert-success">
+                {{ session('success') }}
             </div>
-        </nav>
+        @endif
+        @if($errors->any())
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
         @yield('content')
+    </div>
 
-        <footer>
-            <div class="container">
-                <div class="row">
-                    <div class="col-12 text-center text-muted">© Rusky Vet - Todos os direitos reservados.</div>
-                </div>
-            </div>
-        </footer>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js"></script>
+    @yield('scripts')
+</body>
 
-        <script src="{{ asset('js/app.js') }}?v=1" type="text/javascript"></script>
-        <script>
-            @if(session('toast'))
-                toast('{{ session('toast') }}');
-            @endif
-        </script>
-        @stack('scripts')
-    </body>
 </html>

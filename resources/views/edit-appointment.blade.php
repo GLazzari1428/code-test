@@ -1,69 +1,41 @@
 @extends('layouts.main')
-@section('title', 'Rusky Vet - A saúde do seu cão em primeiro lugar')
+
 @section('content')
-	<section class="py-6 border-bottom">
-		<div class="container text-center">
-			<h1>Consulta #1</h1>
+    <h2>Detalhes da Consulta</h2>
 
-			<div class="row mt-4 justify-content-center">
-				<div class="col-md-10 text-left">
+    <div class="card">
+        <div class="card-header">
+            Consulta de <strong>{{ $appointment->patient->name }}</strong> em {{ $appointment->appointment_date->format('d/m/Y \à\s H:i') }}
+        </div>
+        <div class="card-body">
+            <p><strong>Dono(a):</strong> {{ $appointment->user->name }}</p>
+            <p><strong>Paciente:</strong> {{ $appointment->patient->name }}</p>
+            <p><strong>Raça:</strong> {{ $appointment->patient->breed }}</p>
+            <p><strong>Status:</strong> 
+                @if ($appointment->status == 'scheduled')
+                    <span class="badge badge-primary">Agendada</span>
+                @elseif ($appointment->status == 'finished')
+                    <span class="badge badge-success">Finalizada</span>
+                @endif
+            </p>
 
-					<div class="text-center mb-4">
-						<img src="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcSDJVdoqib2dry6LTBDWU_0WWvWON_zdAMn_w&usqp=CAU" class="radius" height="140">
-					</div>
+            <hr>
 
-					<table class="table">
-						<tbody>
-							<tr>
-								<th>Consulta</th>
-								<td>1</td>
-							</tr>
-							<tr>
-								<th>Status</th>
-								<td>AGENDADA</td>
-							</tr>
-							<tr>
-								<th>Data e hora</th>
-								<td>10/10/2020 10:10</td>
-							</tr>
-							<tr>
-								<th>Nome do paciente</th>
-								<td>Scooby-Doo</td>
-							</tr>
-							<tr>
-								<th>Raça</th>
-								<td>Dogue Alemão</td>
-							</tr>
-							<tr>
-								<th>Idade</th>
-								<td>7 dias</td>
-							</tr>
-							<tr>
-								<th>Dono</th>
-								<td>Salsicha Billy Rogers</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
-			</div>
+            <form action="{{ route('appointment.update', $appointment) }}" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="form-group">
+                    <label for="notes">Observações</label>
+                    <textarea name="notes" id="notes" rows="5" class="form-control" {{ $appointment->status == 'finished' ? 'readonly' : 'required' }}>{{ $appointment->notes }}</textarea>
+                </div>
 
-			<div class="row mt-6 justify-content-center">
-				<div class="col-md-6 text-left">
-					<form action="" method="POST">
-						<div class="form-group">
-							<label for="notes">Observações</label>
-							<textarea name="notes" rows="7" class="form-control @error('notes') is-invalid @enderror" id="notes"></textarea>
-							@error('notes')
-								<span class="invalid-feedback" role="alert">
-									<strong>{{ $message }}</strong>
-								</span>
-							@enderror
-						</div>
-
-						<button type="submit" class="btn btn-primary btn-block mt-4">Salvar e finalizar consulta</button>
-					</form>
-				</div>
-			</div>
-		</div>
-	</section>
+                @if ($appointment->status == 'finished')
+                    <p><strong>Consulta finalizada por:</strong> {{ $appointment->vet->name ?? 'N/A' }}</p>
+                    <a href="{{ route('vet.dashboard') }}" class="btn btn-secondary">Voltar</a>
+                @else
+                    <button type="submit" class="btn btn-primary">Salvar e Finalizar Consulta</button>
+                @endif
+            </form>
+        </div>
+    </div>
 @endsection

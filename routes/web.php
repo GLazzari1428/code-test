@@ -1,47 +1,32 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
-|
-*/
+Route::get('/', [SiteController::class, 'showHome'])->name('home');
 
-Route::get('/', [SiteController::class, 'index'])->name('index');
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [AuthController::class, 'login']);
+Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+Route::post('/register', [AuthController::class, 'register']);
 
-// Auth
-Route::get('/login', [AuthController::class, 'login'])->name('login');
-Route::post('/login', [AuthController::class, 'auth'])->name('login.auth');
-Route::get('/register', [AuthController::class, 'register'])->name('register');
-Route::post('/register', [AuthController::class, 'store'])->name('register.store');
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::middleware(['auth'])->group(function () {
+    Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 
+    Route::get('/client', [SiteController::class, 'showClientDashboard'])->name('client.dashboard');
+    Route::get('/vet', [SiteController::class, 'showVetDashboard'])->name('vet.dashboard');
 
-Route::group(['middleware' => 'auth'], function () {
-    Route::get('/client', [SiteController::class, 'client'])->name('client');
-    Route::get('/vet', [SiteController::class, 'vet'])->name('vet');
+    Route::post('/patient/create', [UserController::class, 'storePatient'])->name('patient.store');
+    Route::get('/patient/{patient}/edit', [UserController::class, 'editPatient'])->name('patient.edit');
+    Route::put('/patient/{patient}', [UserController::class, 'updatePatient'])->name('patient.update');
+    Route::delete('/patient/{patient}', [UserController::class, 'deletePatient'])->name('patient.delete');
 
-    // User Profile
-    Route::get('/user/profile', [UserController::class, 'edit'])->name('user.edit');
-    Route::put('/user/profile', [UserController::class, 'update'])->name('user.update');
-
-    // Patient (represents both patient and appointment in this structure)
-    Route::get('/patient/edit/{id}', [SiteController::class, 'editPatient'])->name('patient.edit');
-    Route::put('/patient/{id}', [SiteController::class, 'updatePatient'])->name('patient.update');
-
-    // Appointment
-    Route::get('/appointment/create', [SiteController::class, 'createAppointment'])->name('appointment.create');
-    Route::post('/appointment', [SiteController::class, 'storeAppointment'])->name('appointment.store');
-    Route::get('/appointment/edit/{id}', [SiteController::class, 'editAppointment'])->name('appointment.edit');
-    Route::put('/appointment/update/{id}', [SiteController::class, 'updateAppointment'])->name('appointment.update');
-    Route::delete('/appointment/delete/{id}', [SiteController::class, 'destroyAppointment'])->name('appointment.destroy');
+    Route::get('/appointment/create', [AppointmentController::class, 'create'])->name('appointment.create');
+    Route::post('/appointment/create', [AppointmentController::class, 'store'])->name('appointment.store');
+    Route::get('/appointments/available-slots', [AppointmentController::class, 'getAvailableSlots'])->name('appointment.slots');
+    Route::get('/vet/appointment/{appointment}', [AppointmentController::class, 'edit'])->name('appointment.edit');
+    Route::put('/vet/appointment/{appointment}', [AppointmentController::class, 'update'])->name('appointment.update');
 });

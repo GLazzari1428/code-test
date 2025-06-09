@@ -1,98 +1,74 @@
 @extends('layouts.main')
-@section('title', 'Rusky Vet - A saúde do seu cão em primeiro lugar')
+
 @section('content')
-	<section class="py-6 border-bottom">
-		<div class="container text-center">
-			<h1>Agendar consulta</h1>
+    <h2>Agendar consulta</h2>
 
-			<div class="row mt-6 justify-content-center">
-				<div class="col-md-5 text-left">
-					<form action="{{ route('client.create-appointment') }}" method="POST">
-						@csrf
-						<div class="form-group">
-							<label for="patient">Paciente</label>
-							<select name="patient" class="form-control @error('patient') is-invalid @enderror" id="patient">
-								<option value="">Selecione</option>
-								@foreach(auth()->User()->Patient()->where('name', '!=', null)->get() as $patient)
-									<option value="{{ $patient->id }}">{{ $patient->name }}</option>
-								@endforeach
-							</select>
-							@error('patient')
-								<span class="invalid-feedback" role="alert">
-									<strong>{{ $message }}</strong>
-								</span>
-							@enderror
-						</div>
+    <form action="{{ route('appointment.store') }}" method="POST">
+        @csrf
 
-						<div class="form-group">
-							<label for="date">Data da consulta</label>
-							<input type="text" name="date" autocomplete="off" class="form-control @error('date') is-invalid @enderror" id="date" value="{{ old('date', now()->format('d/m/Y')) }}">
-							@error('date')
-								<span class="invalid-feedback" role="alert">
-									<strong>{{ $message }}</strong>
-								</span>
-							@enderror
-						</div>
+        <div class="form-group">
+            <label for="patient_id">Cachorro</label>
+            <select name="patient_id" id="patient_id" class="form-control" required>
+                <option value="">Selecione um cachorro</option>
+                @foreach ($patients as $patient)
+                    <option value="{{ $patient->id }}">{{ $patient->name }}</option>
+                @endforeach
+            </select>
+        </div>
 
-						<div class="form-group">
-							<label for="time">Horário da consulta</label>
-							<select name="time" class="form-control @error('time') is-invalid @enderror" id="time">
-								<option value="">Selecione</option>
-								<option value="08:00" disabled>08:00</option>
-								<option value="09:00">09:00</option>
-								<option value="10:00">10:00</option>
-								<option value="11:00" disabled>11:00</option>
-								<option value="12:00">12:00</option>
-								<option value="13:00">13:00</option>
-								<option value="14:00">14:00</option>
-								<option value="15:00">15:00</option>
-								<option value="16:00">16:00</option>
-								<option value="17:00">17:00</option>
-							</select>
-							@error('time')
-								<span class="invalid-feedback" role="alert">
-									<strong>{{ $message }}</strong>
-								</span>
-							@enderror
-						</div>
+        <div class="form-group">
+            <label for="appointment_date">Data</label>
+            <input type="date" name="appointment_date" id="appointment_date" class="form-control" required>
+        </div>
 
-						<p>Por favor, certifique-se de que poderá comparecer no horário marcado, pois não será possível desfazer o agendamento.</p>
+        <div class="form-group">
+            <label for="appointment_time">Horário</label>
+            <select name="appointment_time" id="appointment_time" class="form-control" required>
+                <option value="">Selecione uma data para ver os horários</option>
+            </select>
+        </div>
 
-						<button type="submit" class="btn btn-primary btn-block mt-4">Agendar</button>
+        <button type="submit" class="btn btn-primary">Agendar</button>
+    </form>
 
-					</form>
-				</div>
-			</div>
-		</div>
-	</section>
 @endsection
-@push('scripts')
-	<script>
-		$(document).ready(() => {
-			$('#date').datepicker({
-				language: 'pt-BR',
-				autoHide: true,
-				filter: function(date, view) {
-					if ((date.getDay() === 0 || date.getDay() === 6)) {
-						return false;
-					}
-				}
-			});
 
-			$('#date').datepicker('setStartDate', new Date());
+@section('scripts')
+<script>
+$(document).ready(function() {
+    $('#appointment_date').on('change', function() {
+        var date = $(this).val();
+        var timeSelect = $('#appointment_time');
+        
+        timeSelect.html('<option value="">Carregando...</option>');
 
-			$('#date').change(() => {
-				loadAppointmentTimes();
-			});
+        if (!date) {
+            timeSelect.html('<option value="">Selecione uma data para ver os horários</option>');
+            return;
+        }
 
-			function loadAppointmentTimes() {
-				const date = $('#date').val();
-				// - TODO: Carregar os horários disponíveis via ajax de acordo com a data.
-				console.log(date);
-			}
-
-			loadAppointmentTimes();
-		});
-
-	</script>
-@endpush
+        $.ajax({
+            url: '{{ route("appointment.slots") }}',
+            type: 'GET',
+            data: { date: date },
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(data) {
+                timeSelect.html('');
+                if (data.length > 0) {
+                    $.each(data, function(key, value) {
+                        timeSelect.append('<option value="' + value + '">' + value + '</option>');
+                    });
+                } else {
+                    timeSelect.html('<option value="">Nenhum horário disponível</option>');
+                }
+            },
+            error: function() {
+                timeSelect.html('<option value="">Erro ao buscar horários</option>');
+            }
+        });
+    });
+});
+</script>
+@endsection
