@@ -2,107 +2,47 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Appointment;
 use App\Models\Patient;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class SiteController extends Controller
 {
-    public function index()
+    public function showHome()
     {
+        if (Auth::check()) {
+            if (Auth::user()->is_vet) {
+                return redirect()->route('vet.dashboard');
+            } else {
+                return redirect()->route('client.dashboard');
+            }
+        }
+
         return view('index');
     }
 
-    public function client()
+    public function showClientDashboard()
     {
-        return view('client')->with('patients', auth()->User()->patients);
-    }
+        $user = Auth::user();
+        $patients = $user->patients()->get();
+        $appointments = $user->appointments()->with('patient')->orderBy('appointment_date', 'desc')->get();
 
-    public function vet()
-    {
-        return view('vet')->with('patients', Patient::all());
-    }
-
-    // -- NOVAS FUNCIONALIDADES --
-
-    // CONSULTAS
-    public function createAppointment()
-    {
-        return view('create-appointment');
-    }
-
-    public function storeAppointment(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'species' => 'required|string|max:255',
-            'description' => 'required|string',
-            'date' => 'required|date',
-            'hour' => 'required',
+        return view('client', [
+            'patients' => $patients,
+            'appointments' => $appointments
         ]);
-
-        $patient = new Patient($request->all());
-        $patient->user_id = Auth::id();
-        $patient->save();
-
-        return redirect()->route('client')->with('toast', 'Consulta agendada com sucesso!');
     }
 
-    public function editAppointment($id)
+    public function showVetDashboard()
     {
-        $appointment = Patient::findOrFail($id);
-        $this->authorize('update', $appointment); // Usa a PatientPolicy
-        return view('edit-appointment')->with('appointment', $appointment);
-    }
+        if (!Auth::user()->is_vet) {
+            return redirect()->route('client.dashboard');
+        }
 
-    public function updateAppointment(Request $request, $id)
-    {
-        $appointment = Patient::findOrFail($id);
-        $this->authorize('update', $appointment); // Usa a PatientPolicy
-
-        $request->validate([
-            'description' => 'required|string',
-            'date' => 'required|date',
-            'hour' => 'required',
-        ]);
-
-        $appointment->update($request->only(['description', 'date', 'hour']));
-        
-        $route = auth()->User()->type === 'VET' ? 'vet' : 'client';
-        return redirect()->route($route)->with('toast', 'Consulta atualizada com sucesso!');
-    }
-
-    public function destroyAppointment($id)
-    {
-        $appointment = Patient::findOrFail($id);
-        $this->authorize('delete', $appointment); // Usa a PatientPolicy
-
-        $appointment->delete();
-
-        return back()->with('toast', 'Consulta excluída com sucesso!');
-    }
-
-    // PACIENTES
-    public function editPatient($id)
-    {
-        $patient = Patient::findOrFail($id);
-        $this->authorize('update', $patient); // Usa a PatientPolicy
-        return view('edit-patient')->with('patient', $patient);
-    }
-
-    public function updatePatient(Request $request, $id)
-    {
-        $patient = Patient::findOrFail($id);
-        $this->authorize('update', $patient); // Usa a PatientPolicy
-
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'species' => 'required|string|max:255',
-        ]);
-
-        $patient->update($request->only(['name', 'species']));
-
-        $route = auth()->User()->type === 'VET' ? 'vet' : 'client';
-        return redirect()->route($route)->with('toast', 'Paciente atualizado com sucesso!');
+        $appointments = Appointment::with('patient', 'user')
+            ->orderBy('appointment_date', 'desc')
+            ->get();
+            
+        return view('vet', ['appointments' => $appointments]);
     }
 }

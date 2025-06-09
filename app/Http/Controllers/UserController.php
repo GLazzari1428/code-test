@@ -2,44 +2,61 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Patient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    /**
-     * Mostra o formulário para editar o perfil do utilizador.
-     */
-    public function edit()
+    public function storePatient(Request $request)
     {
-        return view('user.profile', [
-            'user' => Auth::user(),
-        ]);
-    }
-
-    /**
-     * Atualiza as informações do perfil do utilizador.
-     */
-    public function update(Request $request)
-    {
-        $user = Auth::user();
-
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'password' => 'nullable|string|min:8|confirmed',
+            'species' => 'required|string|max:255',
+            'breed' => 'required|string|max:255',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
-        $user->name = $request->name;
-        $user->email = $request->email;
-
-        if ($request->filled('password')) {
-            $user->password = Hash::make($request->password);
+        $path = null;
+        if ($request->hasFile('photo')) {
+            $path = $request->file('photo')->store('patients', 'public');
         }
 
-        $user->save();
+        Auth::user()->patients()->create([
+            'name' => $request->name,
+            'species' => $request->species,
+            'breed' => $request->breed,
+            'photo' => $path,
+        ]);
 
-        return redirect()->route('user.edit')->with('toast', 'Perfil atualizado com sucesso!');
+        return back();
+    }
+
+    public function editPatient(Patient $patient)
+    {
+        $this->authorize('update', $patient);
+        return view('edit-patient', ['patient' => $patient]);
+    }
+    
+    public function updatePatient(Request $request, Patient $patient)
+    {
+        $this->authorize('update', $patient);
+    
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'species' => 'required|string|max:255',
+            'breed' => 'required|string|max:255',
+        ]);
+    
+        $patient->update($data);
+    
+        return redirect()->route('client.dashboard');
+    }
+
+    public function deletePatient(Patient $patient)
+    {
+        $this->authorize('delete', $patient);
+        $patient->delete();
+        return back();
     }
 }
