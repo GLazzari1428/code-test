@@ -53,7 +53,7 @@ class PatientPolicy
      */
     public function update(User $user, Patient $patient)
     {
-        //
+        return $user->id === $patient->user_id || $user->type === 'VET';
     }
 
     /**
@@ -65,7 +65,7 @@ class PatientPolicy
      */
     public function delete(User $user, Patient $patient)
     {
-        //
+        return $user->id === $patient->user_id || $user->type === 'VET';
     }
 
     /**

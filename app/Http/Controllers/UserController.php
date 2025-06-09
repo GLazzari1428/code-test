@@ -5,14 +5,11 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use App\Models\User;
 
 class UserController extends Controller
 {
     /**
-     * Show the form for editing the user's profile.
-     *
-     * @return \Illuminate\View\View
+     * Mostra o formulário para editar o perfil do utilizador.
      */
     public function edit()
     {
@@ -22,10 +19,7 @@ class UserController extends Controller
     }
 
     /**
-     * Update the user's profile information.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
+     * Atualiza as informações do perfil do utilizador.
      */
     public function update(Request $request)
     {
@@ -46,6 +40,6 @@ class UserController extends Controller
 
         $user->save();
 
-        return redirect()->route('user.edit')->with('msg', 'Perfil atualizado com sucesso!');
+        return redirect()->route('user.edit')->with('toast', 'Perfil atualizado com sucesso!');
     }
 }

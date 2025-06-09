@@ -3,11 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Patient;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Gate;
-
 
 class SiteController extends Controller
 {
@@ -18,42 +15,17 @@ class SiteController extends Controller
 
     public function client()
     {
-        $user = Auth::user();
-        $patients = Patient::where('user_id', $user->id)->get();
-        return view('client', ['patients' => $patients]);
+        return view('client')->with('patients', auth()->User()->patients);
     }
 
     public function vet()
     {
-        $patients = Patient::all();
-        return view('vet', ['patients' => $patients]);
+        return view('vet')->with('patients', Patient::all());
     }
 
-    // Patient Methods
-    public function editPatient($id)
-    {
-        $patient = Patient::findOrFail($id);
-        $this->authorize('update', $patient);
-        return view('edit-patient', ['patient' => $patient]);
-    }
+    // -- NOVAS FUNCIONALIDADES --
 
-    public function updatePatient(Request $request, $id)
-    {
-        $patient = Patient::findOrFail($id);
-        $this->authorize('update', $patient);
-
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'species' => 'required|string|max:255',
-        ]);
-        
-        $patient->update($request->only(['name', 'species']));
-
-        return redirect()->route(Auth::user()->type == 'vet' ? 'vet' : 'client')->with('msg', 'Paciente atualizado com sucesso!');
-    }
-
-
-    // Appointment Methods
+    // CONSULTAS
     public function createAppointment()
     {
         return view('create-appointment');
@@ -69,29 +41,24 @@ class SiteController extends Controller
             'hour' => 'required',
         ]);
 
-        $patient = new Patient();
-        $patient->name = $request->name;
-        $patient->species = $request->species;
-        $patient->description = $request->description;
-        $patient->date = $request->date;
-        $patient->hour = $request->hour;
-        $patient->user_id = Auth::user()->id;
+        $patient = new Patient($request->all());
+        $patient->user_id = Auth::id();
         $patient->save();
 
-        return redirect()->route('client')->with('msg', 'Consulta agendada com sucesso!');
+        return redirect()->route('client')->with('toast', 'Consulta agendada com sucesso!');
     }
 
     public function editAppointment($id)
     {
         $appointment = Patient::findOrFail($id);
-        $this->authorize('update', $appointment);
-        return view('edit-appointment', ['appointment' => $appointment]);
+        $this->authorize('update', $appointment); // Usa a PatientPolicy
+        return view('edit-appointment')->with('appointment', $appointment);
     }
 
     public function updateAppointment(Request $request, $id)
     {
         $appointment = Patient::findOrFail($id);
-        $this->authorize('update', $appointment);
+        $this->authorize('update', $appointment); // Usa a PatientPolicy
 
         $request->validate([
             'description' => 'required|string',
@@ -100,17 +67,42 @@ class SiteController extends Controller
         ]);
 
         $appointment->update($request->only(['description', 'date', 'hour']));
-
-        return redirect()->route(Auth::user()->type == 'vet' ? 'vet' : 'client')->with('msg', 'Consulta atualizada com sucesso!');
+        
+        $route = auth()->User()->type === 'VET' ? 'vet' : 'client';
+        return redirect()->route($route)->with('toast', 'Consulta atualizada com sucesso!');
     }
 
     public function destroyAppointment($id)
     {
         $appointment = Patient::findOrFail($id);
-        $this->authorize('delete', $appointment);
+        $this->authorize('delete', $appointment); // Usa a PatientPolicy
 
         $appointment->delete();
 
-        return back()->with('msg', 'Consulta excluída com sucesso!');
+        return back()->with('toast', 'Consulta excluída com sucesso!');
+    }
+
+    // PACIENTES
+    public function editPatient($id)
+    {
+        $patient = Patient::findOrFail($id);
+        $this->authorize('update', $patient); // Usa a PatientPolicy
+        return view('edit-patient')->with('patient', $patient);
+    }
+
+    public function updatePatient(Request $request, $id)
+    {
+        $patient = Patient::findOrFail($id);
+        $this->authorize('update', $patient); // Usa a PatientPolicy
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'species' => 'required|string|max:255',
+        ]);
+
+        $patient->update($request->only(['name', 'species']));
+
+        $route = auth()->User()->type === 'VET' ? 'vet' : 'client';
+        return redirect()->route($route)->with('toast', 'Paciente atualizado com sucesso!');
     }
 }
