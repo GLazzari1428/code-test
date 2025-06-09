@@ -24,28 +24,35 @@
 
 3. Modificar o `.env` com as credenciais corretas do banco de dados.
 ```.env
-    composer install
+    DB_DATABASE={nome_db}
+    DB_USERNAME={user_db}
+    DB_PASSWORD={senha_db}
 ```
-Execute php artisan key:generate.
+4. Rode os comandos abaixo para gerar as keys, criar & popular o banco de dados e habilitar a visualização das fotos.
 ```shell
-    composer install
+    php artisan key:generate
+    php artisan migrate:fresh --seed
+    php artisan storage:link
 ```
-Execute php artisan migrate:fresh --seed para criar e popular o banco de dados. Este comando é essencial.
+    
+5. Por último rode o projeto : 
 ```shell
-    composer install
-```
-Execute php artisan storage:link para habilitar a visualização das fotos.
-```shell
-    composer install
-```
-Inicie o servidor com php artisan serve.
-```shell
-    composer install
+    php artisan serve
 ```
 
-Credenciais de Acesso
-Cliente: joaodasilva@gmail.com
+## Acesso
+Acesse o localhost ([127.0.0.1:8000](127.0.0.1:8000)) e utilize as credencias abaixo ou crie novas pelo site.
+- Cliente: 
+```shell
+joaodasilva@gmail.com
+```
 
-Veterinário: mariovet@gmail.com
+- Veterinário: 
+```shell
+mariovet@gmail.com
+```
 
-Senha (para ambos): 123123123
+- Senha (para ambos): 
+```shell
+123123123
+```
