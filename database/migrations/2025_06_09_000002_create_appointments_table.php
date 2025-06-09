@@ -6,24 +6,30 @@ use Illuminate\Support\Facades\Schema;
 
 class CreateAppointmentsTable extends Migration
 {
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
     public function up()
     {
         Schema::create('appointments', function (Blueprint $table) {
-            $table->increments('id');
-            $table->unsignedInteger('patient_id');
-            $table->unsignedInteger('user_id');
-            $table->unsignedInteger('vet_id')->nullable();
+            $table->id();
+            $table->foreignId('patient_id')->constrained('patients')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('vet_id')->nullable()->constrained('users')->onDelete('set null');
             $table->dateTime('appointment_date');
             $table->text('notes')->nullable();
             $table->string('status')->default('scheduled');
             $table->timestamps();
-
-            $table->foreign('patient_id')->references('id')->on('patients')->onDelete('cascade');
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('vet_id')->references('id')->on('users')->onDelete('set null');
         });
     }
 
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
     public function down()
     {
         Schema::dropIfExists('appointments');

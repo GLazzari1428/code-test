@@ -7,7 +7,6 @@ use App\Models\Patient;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class AppointmentController extends Controller
 {
@@ -26,7 +25,7 @@ class AppointmentController extends Controller
         ]);
 
         $patient = Patient::find($request->patient_id);
-        if (Auth::id() !== $patient->user_id) {
+        if (Auth::id() !== $patient->user_id && !Auth::user()->is_vet) {
             abort(403);
         }
 
@@ -34,7 +33,7 @@ class AppointmentController extends Controller
 
         Appointment::create([
             'patient_id' => $request->patient_id,
-            'user_id' => Auth::id(),
+            'user_id' => $patient->user_id,
             'appointment_date' => $dateTime,
             'status' => 'scheduled',
         ]);
@@ -71,12 +70,6 @@ class AppointmentController extends Controller
         }
 
         return response()->json($availableSlots);
-    }
-
-    public function show(Appointment $appointment)
-    {
-        $this->authorize('view', $appointment);
-        return view('appointment', ['appointment' => $appointment]);
     }
 
     public function edit(Appointment $appointment)

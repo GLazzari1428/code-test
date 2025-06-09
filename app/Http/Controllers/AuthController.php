@@ -2,72 +2,67 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
 use App\Models\User;
-use Hash;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
-class AuthController extends Controller {
+class AuthController extends Controller
+{
+    public function showLogin()
+    {
+        return view('auth.login');
+    }
 
-    public function getLogin(Request $request) {
-		return view('auth/login');
-	}
+    public function login(Request $request)
+    {
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+        ]);
 
-	public function getRegister(Request $request) {
-		return view('auth/register');
-	}
+        if (Auth::attempt($credentials)) {
+            $request->session()->regenerate();
 
-	public function postLogin(Request $request) {
-		$request->validate([
-			'email' => 'email',
-			'password' => 'required'
-		]);
+            return redirect()->intended('/');
+        }
 
-		$user = User::where('email', $request->email)->first();
-		if ($user && Hash::check($request->password, $user->password)) {
-			// Verifica tipo de usuário, então faz o login de acordo
-			// Verifique config/auth.php em guards
-			if ($user->type == 'VET') {
-				auth()->guard('vet')->login($user);
-				auth()->login($user);
-				return redirect()->route('vet');
-			}
-			else {
-				auth()->login($user);
-				return redirect()->route('client');
-			}
-		}
-		else {
-			return redirect()->back()->withInput()->withErrors([ 'email' => 'Usuário não encontrado' ]);
-		}
-	}
+        return back()->withErrors([
+            'email' => 'As credenciais fornecidas não correspondem aos nossos registros.',
+        ])->onlyInput('email');
+    }
 
-	public function postRegister(Request $request) {
-		$request->validate([
-			'name' => 'required',
-			'email' => 'email',
-			'password' => 'required|min:8'
-		]);
+    public function showRegister()
+    {
+        return view('auth.register');
+    }
 
-		$user = User::create([
-			'name' => $request->name,
-			'email' => $request->email,
-			'password' => Hash::make($request->password),
-		]);
+    public function register(Request $request)
+    {
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'password' => ['required', 'string', 'min:8'],
+        ]);
 
-		auth()->login($user);
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+        ]);
 
-		return redirect()->route('client')->with('toast', 'Cadastro efetuado com sucesso');
-	}
+        Auth::login($user);
 
-	public function getLogout() {
-		$guards = array_keys(config('auth.guards'));
-		foreach ($guards as $guard) {
-			if (auth()->guard($guard)->check()) {
-				auth()->guard($guard)->logout();
-			}
-		}
+        return redirect('/');
+    }
 
-		return redirect()->route('index');
-	}
+    public function logout(Request $request)
+    {
+        Auth::logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/');
+    }
 }

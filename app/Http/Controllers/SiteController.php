@@ -39,9 +39,7 @@ class SiteController extends Controller
             return redirect()->route('client.dashboard');
         }
 
-        $appointments = Appointment::with('patient', 'user')
-            ->orderBy('appointment_date', 'desc')
-            ->get();
+        $appointments = Appointment::with(['patient', 'user'])->orderBy('appointment_date', 'desc')->get();
             
         return view('vet', ['appointments' => $appointments]);
     }

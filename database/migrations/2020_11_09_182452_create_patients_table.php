@@ -14,12 +14,11 @@ class CreatePatientsTable extends Migration
     public function up()
     {
         Schema::create('patients', function (Blueprint $table) {
-			$table->id();
-			$table->integer('user_id');
-			$table->string('name')->nullable();
-			$table->string('breed')->nullable();
-			$table->enum('gender', [ 'M', 'F' ])->nullable();
-			$table->date('birthdate')->nullable();
+            $table->id();
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->string('name');
+            $table->string('species');
+            $table->string('breed');
             $table->timestamps();
         });
     }
